@@ -3,7 +3,44 @@ import pandas as pd
 import math
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Peth-Control", page_icon="📊")
+st.set_page_config(page_title="Peth-Control", page_icon="📊", layout="wide")
+
+# Custom CSS for modern design inspired by Lemonade
+st.markdown("""
+<style>
+    .main {
+        background-color: #f8f9fa;
+        color: #333;
+    }
+    .stButton>button {
+        background-color: #ff6b35;
+        color: white;
+        border-radius: 10px;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+    .stButton>button:hover {
+        background-color: #e55a2b;
+    }
+    .stMetric {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .stSuccess, .stError, .stInfo {
+        border-radius: 10px;
+        padding: 10px;
+    }
+    h1, h2, h3 {
+        color: #ff6b35;
+    }
+    .sidebar .sidebar-content {
+        background-color: #ffffff;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 st.title("📊 Peth-Control Pro")
 st.subheader("Logga din konsumtion")
@@ -24,17 +61,13 @@ DRYCKER = {
     "Lättöl/Folköl 33cl (2.8%)": 0.5
 }
 
-# --- INPUT: ANVÄNDARDATA ---
-col_user1, col_user2 = st.columns(2)
+# --- SIDEBAR: ANVÄNDARDATA ---
+st.sidebar.header("⚙️ Inställningar")
+vikt = st.sidebar.selectbox("Din vikt (kg):", list(range(40, 201)), index=40)
+kon = st.sidebar.radio("Kön:", ["Man", "Kvinna"])
+start_varde = st.sidebar.number_input("Senaste uppmätta PEth-värde:", min_value=0.0, value=0.0, step=0.05)
 
-with col_user1:
-    vikt = st.selectbox("Din vikt (kg):", list(range(40, 201)), index=40)
-    kon = st.radio("Kön:", ["Man", "Kvinna"])
-
-with col_user2:
-    start_varde = st.number_input("Senaste uppmätta PEth-värde:", min_value=0.0, value=0.0, step=0.05)
-
-# --- INPUT: LOGGBOK ---
+# --- MAIN: LOGGBOK ---
 st.write("---")
 st.write("### Registrera dryckestillfälle")
 
@@ -106,3 +139,4 @@ if total_peth_idag > 0:
 if st.button("🗑️ Rensa loggen"):
     st.session_state.logg = []
     st.rerun()
+
