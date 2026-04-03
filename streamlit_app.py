@@ -8,62 +8,54 @@ st.set_page_config(page_title="Peth-Control", page_icon="📊", layout="wide")
 # Custom CSS for modern design inspired by Lemonade
 st.markdown("""
 <style>
-    /* Bakgrund och typsnitt */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
-    
-    html, body, [class*="css"]  {
+    /* Importera ett modernt typsnitt */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+    html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
-        background-color: #fcfcfc;
+        background-color: #fcfcfc; /* Off-white bakgrund */
     }
 
-    /* Centrera och snygga till behållaren */
-    .stApp {
-        max-width: 800px;
-        margin: 0 auto;
+    /* Gör huvudbehållaren till ett "kort" */
+    .main .block-container {
+        background-color: #ffffff;
+        padding: 4rem 2rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.03);
+        margin-top: 2rem;
     }
 
-    /* Styla knapparna - Lemonade-rosa/orange */
+    /* Styla den stora rosa/orangea knappen */
     .stButton>button {
         background-color: #ff6b35;
         color: white;
-        border-radius: 12px;
-        padding: 20px;
-        font-size: 18px;
+        border-radius: 30px; /* Mycket runda hörn */
+        padding: 18px 24px;
+        font-size: 1.1rem;
+        font-weight: 600;
         border: none;
-        box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2);
-        transition: all 0.2s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        width: 100%;
+        box-shadow: 0 8px 20px rgba(255, 107, 53, 0.2);
+        transition: all 0.3s ease;
     }
 
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+        box-shadow: 0 12px 25px rgba(255, 107, 53, 0.3);
         background-color: #ff8254;
     }
 
-    /* Input-fälten */
-    .stNumberInput, .stSelectbox, .stSlider {
-        background-color: white;
-        border-radius: 15px;
-        padding: 10px;
-        border: 1px solid #eee;
-    }
-
-    /* Resultat-kortet */
-    div[data-testid="stMetric"] {
-        background-color: #ffffff;
-        border: 1px solid #f0f0f0;
-        padding: 25px;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        text-align: center;
-    }
-
-    /* Progress bar */
+    /* Snygga till progress-baren */
     .stProgress > div > div > div > div {
         background-color: #ff6b35;
-        height: 8px;
+        border-radius: 10px;
+        height: 6px;
+    }
+
+    /* Centrera rubriker */
+    h1, .step-text {
+        text-align: center;
+        color: #2d2d2d;
     }
 </style>
 """, unsafe_allow_html=True)
