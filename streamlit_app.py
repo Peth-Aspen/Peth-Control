@@ -1,23 +1,30 @@
 import streamlit as st
+import pandas as pd
 from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Peth-Control", page_icon="📊")
 
 st.title("📊 Peth-Control Pro")
-st.subheader("Logga din konsumtion")
+st.subheader("Din personliga PEth-analys")
 
 # --- INSTÄLLNINGAR ---
-HALVERINGSTID = 7.0  # Dagar
-MAX_DAGAR_BAKÅT = 45 # Allt äldre än 45 dagar anses försumbart
+HALVERINGSTID = 7.0 
+MAX_DAGAR_BAKÅT = 45 
 
-# --- INPUT: BASDATA ---
-vikt = st.selectbox("Välj din vikt (kg):", list(range(1, 201)), index=79)
+# --- INPUT: ANVÄNDARDATA ---
+col_user1, col_user2 = st.columns(2)
+
+with col_user1:
+    vikt = st.selectbox("Din vikt (kg):", list(range(40, 201)), index=40) # Startar på 80kg
+    kon = st.radio("Kön:", ["Man", "Kvinna"])
+
+with col_user2:
+    start_varde = st.number_input("Har du ett nyligen uppmätt PEth-värde?", min_value=0.0, value=0.0, step=0.05, help="Om du vet ditt värde från ett test, skriv in det här.")
 
 # --- INPUT: LOGGBOK ---
 st.write("---")
 st.write("### Registrera dryckestillfälle")
 
-# Begränsa datumval till rimlig tid bakåt
 min_date = datetime.now() - timedelta(days=MAX_DAGAR_BAKÅT)
 valda_datum = st.date_input("Vilket datum drack du?", 
                             value=datetime.now(), 
@@ -28,53 +35,76 @@ col1, col2 = st.columns(2)
 with col1:
     antal_ol = st.number_input("Antal starköl (50cl 5%) eller motsvarande:", min_value=0, step=1)
 with col2:
+    # Vi kan använda timmar för framtida mer avancerade förbränningskalkyler
     timmar = st.number_input("Under hur många timmar?", min_value=1, step=1)
 
-# Sessionslista för att spara flera tillfällen (temporärt i webbläsaren)
 if 'logg' not in st.session_state:
     st.session_state.logg = []
 
-if st.button("Lägg till i loggen"):
-    st.session_state.logg.append({
-        'datum': valda_datum,
-        'enheter': antal_ol,
-        'timmar': timmar
-    })
-    st.success(f"Loggat: {antal_ol} enheter den {valda_datum}")
+if st.button("➕ Lägg till i loggen"):
+    if antal_ol > 0:
+        st.session_state.logg.append({'datum': valda_datum, 'enheter': antal_ol})
+        st.success(f"Loggat!")
+    else:
+        st.warning("Vänligen ange antal enheter.")
 
-# --- BERÄKNING ---
-total_peth = 0.0
+# --- BERÄKNINGSLOGIK ---
+total_peth_idag = 0.0
 
+# 1. Lägg till det manuella startvärdet (justerat för tiden som gått)
+if start_varde > 0:
+    total_peth_idag += start_varde # Här antar vi att värdet är från "idag", men vi kan utveckla detta
+
+# 2. Räkna ut bidrag från loggen
 if st.session_state.logg:
-    st.write("### Din logg")
+    st.write("### Din historik")
     for item in st.session_state.logg:
-        # Räkna ut dagar sedan detta tillfälle
         dagar_sedan = (datetime.now().date() - item['datum']).days
         
-        # Förenklad modell: 1 starköl ökar PEth med ca 0.03-0.05 (individuellt!)
-        # Vi använder en formel som påverkas något av vikt
-        peth_okning = (item['enheter'] * 0.4) / (vikt / 10) 
+        # Widmark-faktor justering (Kön)
+        r = 0.68 if kon == "Man" else 0.55
         
-        # Räkna ut restvärdet idag baserat på halveringstid
+        # Formel som tar hänsyn till vikt och kön för PEth-påslag
+        # Baserat på att 1 standardenhet höjer PEth med ca 0.03-0.04 i snitt
+        peth_okning = (item['enheter'] * 0.25) / (vikt * r / 10) 
+        
         restvarde = peth_okning * (0.5 ** (dagar_sedan / HALVERINGSTID))
-        
-        total_peth += restvarde
-        st.write(f"- {item['datum']}: {item['enheter']} st öl ({restvarde:.3f} bidrag idag)")
+        total_peth_idag += restvarde
+        st.write(f"- {item['datum']}: {item['enheter']} st enheter")
 
 # --- RESULTAT ---
 st.divider()
-st.metric(label="Ditt uppskattade totala PEth-värde idag", value=f"{total_peth:.3f}")
+st.metric(label="Uppskattat totalt PEth-värde idag", value=f"{total_peth_idag:.3f}")
 
-if total_peth < 0.05:
-    st.success("Sannolikt under detektionsgränsen.")
-elif total_peth < 0.30:
-    st.warning("Indikerar måttlig konsumtion.")
+if total_peth_idag < 0.05:
+    st.success("✅ Sannolikt under gränsvärdet (0.05)")
+elif total_peth_idag < 0.30:
+    st.warning("⚠️ Indikerar måttlig konsumtion")
 else:
-    st.error("Indikerar hög konsumtion.")
+    st.error("🚨 Indikerar hög konsumtion")
 
-if st.button("Rensa loggen"):
+# --- GRAF: FRAMTIDSPROGNOS ---
+if total_peth_idag > 0:
+    st.write("### Vägen till 0.05")
+    framtids_data = []
+    for i in range(31):
+        datum = datetime.now() + timedelta(days=i)
+        varde = total_peth_idag * (0.5 ** (i / HALVERINGSTID))
+        framtids_data.append({"Datum": datum, "PEth": varde})
+    
+    df = pd.DataFrame(framtids_data)
+    st.line_chart(df.set_index("Datum"))
+    
+    # Beräkna när man når 0.05
+    import math
+    if total_peth_idag > 0.05:
+        dagar_till_grans = HALVERINGSTID * (math.log(0.05 / total_peth_idag) / math.log(0.5))
+        datum_grans = datetime.now() + timedelta(days=dagar_till_grans)
+        st.info(f"Beräknat datum under 0.05: **{datum_grans.date()}** (om ca {int(dagar_till_grans)} dagar)")
+
+if st.button("🗑️ Rensa loggen"):
     st.session_state.logg = []
     st.rerun()
 
 st.caption("---")
-st.caption("Modellen räknar med att en enhet ger ett initialt påslag som sedan avtar med 7 dagars halveringstid.")
+st.caption("Modellen baseras på genomsnittlig fördelningsvolym (Widmark) och 7 dagars halveringstid. Individuella variationer förekommer.")
